@@ -36,6 +36,7 @@ class BNIImageProcessor(object):
         self.db_session = None
         self.next_dir = None
         self.files_to_process = []
+        self.uuid = None
 
         self.init_options()
         self.check_target()
@@ -143,6 +144,17 @@ class BNIImageProcessor(object):
         (options, args) = self.option_parser.parse_args()
         self.options = options
         self.check_options()
+
+    def process(self):
+        pass
+        # TODO
+        # Make self.next_dir in bni_path and lib_path
+        # Iterate over files_to_process
+        # # Set self.UUID from DB
+        # # Move TIF to bni_path, renaming to UUID_*filename*
+        # # Generate SHA1 for TIF
+        # # Move JPG to lib_path, renaming to UUID_*filename*
+        # # Generate SHA1 for JPG
 
     def set_files_to_process(self):
         """ Populates the files_to_process list with TIF files from the source_path tree. """
