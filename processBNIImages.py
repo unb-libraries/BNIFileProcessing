@@ -8,3 +8,4 @@ this project from afar, you probably do not want to use it.
 from BNIImage.BNIImageProcessor import BNIImageProcessor
 
 processor = BNIImageProcessor()
+processor.process()

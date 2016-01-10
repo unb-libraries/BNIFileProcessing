@@ -11,6 +11,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import Sequence
 from sqlalchemy.sql import exists
+from sqlalchemy import event, DDL
 import datetime
 import fnmatch
 import os as os
@@ -27,7 +28,7 @@ class BNIImage(Base):
                   primary_key=True)
     name = Column(String(512), nullable=False)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
-
+event.listen(BNIImage.__table__, "after_create", DDL("INSERT INTO bni_image (uuid, name) VALUES (512082,'START')"))
 
 class BNIImageProcessor(object):
     def __init__(self):
@@ -36,7 +37,6 @@ class BNIImageProcessor(object):
         self.db_session = None
         self.next_dir = None
         self.files_to_process = []
-        self.uuid = None
 
         self.init_options()
         self.check_target()
@@ -68,10 +68,6 @@ class BNIImageProcessor(object):
             self.option_parser.print_help()
             print("\nERROR: Cannot write to LIB path! (-l)")
             sys.exit(2)
-        if self.options.target_path is None or not path.exists(self.options.target_path):
-            self.option_parser.print_help()
-            print("\nERROR: Cannot read target path! (--target)")
-            sys.exit(2)
 
     def check_source_files(self):
         """ Checks the source files for simple problems. """
@@ -85,7 +81,7 @@ class BNIImageProcessor(object):
 
     def check_target(self):
         """ Checks the target files for simple problems. """
-        if not path.isdir(self.options.target_path.rstrip("/") + '/000007') or not path.isdir(self.options.target_path.rstrip("/") + '/000028'):
+        if not path.isdir(self.options.bni_path.rstrip("/") + '/000007') or not path.isdir(self.options.bni_path.rstrip("/") + '/000028'):
             print("\nERROR: Target does not look like I expected! (--target)")
             sys.exit(2)
 
@@ -110,7 +106,8 @@ class BNIImageProcessor(object):
     def init_database(self):
         """ Creates the database connection and sets the session. """
         engine = create_engine('sqlite:///bni_images.db')
-        Base.metadata.create_all(engine)
+        if not os.path.isfile('bni_images.db'):
+            Base.metadata.create_all(engine)
         DBSession = sessionmaker(bind=engine)
         self.db_session = DBSession()
 
@@ -122,12 +119,6 @@ class BNIImageProcessor(object):
             dest="source_path",
             default='',
             help="The source path to copy the files from. No trailing slash.",
-        )
-        self.option_parser.add_option(
-            "-t", "--target",
-            dest="target_path",
-            default='',
-            help="The mounted Amazon S3FS target where the files will be stored. This is used only to determine what directory name to place files into, it is not written to.",
         )
         self.option_parser.add_option(
             "-b", "--bni",
@@ -146,15 +137,16 @@ class BNIImageProcessor(object):
         self.check_options()
 
     def process(self):
-        pass
-        # TODO
-        # Make self.next_dir in bni_path and lib_path
-        # Iterate over files_to_process
-        # # Set self.UUID from DB
-        # # Move TIF to bni_path, renaming to UUID_*filename*
-        # # Generate SHA1 for TIF
-        # # Move JPG to lib_path, renaming to UUID_*filename*
-        # # Generate SHA1 for JPG
+        os.makedirs(self.options.bni_path + "/" + self.next_dir)
+        os.makedirs(self.options.lib_path + "/" + self.next_dir)
+        for tif_filename in self.files_to_process:
+            relative_tif_path = tif_filename.replace(self.options.source_path, '')
+            print self.get_image_uuid(relative_tif_path)
+            # TODO
+            # # Move TIF to bni_path, renaming to UUID_*filename*
+            # # Generate SHA1 for TIF
+            # # Move JPG to lib_path, renaming to UUID_*filename*
+            # # Generate SHA1 for JPG
 
     def set_files_to_process(self):
         """ Populates the files_to_process list with TIF files from the source_path tree. """
@@ -163,8 +155,15 @@ class BNIImageProcessor(object):
                 self.files_to_process.append(root + '/' + filename)
 
     def set_next_dir(self):
-        """ Examines the target_path to determine the next path in the numerically sequenced directories. """
+        """ Examines the bni_path to determine the next path in the numerically sequenced directories. """
         file_counter = 1
-        while path.exists(self.options.target_path + "/" + str(file_counter).zfill(6)):
+        while path.exists(self.options.bni_path + "/" + str(file_counter).zfill(6)):
             file_counter += 1
-        self.next_dir = self.options.target_path + str(file_counter).zfill(6)
+        self.next_dir = str(file_counter).zfill(6)
+
+    def get_image_uuid(self, relative_tif_path):
+        new_image = BNIImage(name=relative_tif_path)
+        self.db_session.add(new_image)
+        self.db_session.flush()
+        self.db_session.commit()
+        return new_image.uuid
