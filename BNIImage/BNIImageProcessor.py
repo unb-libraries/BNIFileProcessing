@@ -68,6 +68,10 @@ class BNIImageProcessor(object):
             self.option_parser.print_help()
             print("\nERROR: Cannot write to LIB path! (-l)")
             sys.exit(2)
+        if self.options.target_path is None or not path.exists(self.options.target_path):
+            self.option_parser.print_help()
+            print("\nERROR: Cannot read target path! (--target)")
+            sys.exit(2)
 
     def check_source_files(self):
         """ Checks the source files for simple problems. """
@@ -81,7 +85,7 @@ class BNIImageProcessor(object):
 
     def check_target(self):
         """ Checks the target files for simple problems. """
-        if not path.isdir(self.options.bni_path.rstrip("/") + '/000007') or not path.isdir(self.options.bni_path.rstrip("/") + '/000028'):
+        if not path.isdir(self.options.target_path.rstrip("/") + '/000007') or not path.isdir(self.options.target_path.rstrip("/") + '/000028'):
             print("\nERROR: Target does not look like I expected! (--target)")
             sys.exit(2)
 
@@ -132,6 +136,12 @@ class BNIImageProcessor(object):
             default='',
             help="The path that LIB files should be copied to.",
         )
+        self.option_parser.add_option(
+            "-t", "--target",
+            dest="target_path",
+            default='',
+            help="The mounted Amazon S3FS target where the files will be stored. This is used only to determine what directory name to place files into, it is not written to.",
+        )
         (options, args) = self.option_parser.parse_args()
         self.options = options
         self.check_options()
@@ -157,7 +167,7 @@ class BNIImageProcessor(object):
     def set_next_dir(self):
         """ Examines the bni_path to determine the next path in the numerically sequenced directories. """
         file_counter = 1
-        while path.exists(self.options.bni_path + "/" + str(file_counter).zfill(6)):
+        while path.exists(self.options.target_path + "/" + str(file_counter).zfill(6)):
             file_counter += 1
         self.next_dir = str(file_counter).zfill(6)
 
