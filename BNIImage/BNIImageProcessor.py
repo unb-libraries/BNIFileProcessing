@@ -12,10 +12,13 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import Sequence
 from sqlalchemy.sql import exists
 from sqlalchemy import event, DDL
+import subprocess
 import datetime
 import fnmatch
 import os as os
+import io
 import sys
+import shutil
 
 
 Base = declarative_base()
@@ -150,13 +153,23 @@ class BNIImageProcessor(object):
         os.makedirs(self.options.bni_path + "/" + self.next_dir)
         os.makedirs(self.options.lib_path + "/" + self.next_dir)
         for tif_filename in self.files_to_process:
+            print "Processing " + tif_filename
             relative_tif_path = tif_filename.replace(self.options.source_path, '')
-            print self.get_image_uuid(relative_tif_path)
-            # TODO
-            # # Move TIF to bni_path, renaming to UUID_*filename*
-            # # Generate SHA1 for TIF
-            # # Move JPG to lib_path, renaming to UUID_*filename*
-            # # Generate SHA1 for JPG
+            image_uuid = self.get_image_uuid(relative_tif_path)
+
+            file_stem = os.path.basename(
+                tif_filename[0:tif_filename.rindex('.')]
+            )
+
+            jpg_filename = os.path.normpath(
+                os.path.dirname(tif_filename) + '/' +
+                '../Jpgs/' +
+                '.'.join((file_stem, 'jpg'))
+            )
+
+            self.archive(tif_filename, relative_tif_path, self.options.bni_path, image_uuid)
+            self.archive(jpg_filename, relative_tif_path, self.options.lib_path, image_uuid)
+
 
     def set_files_to_process(self):
         """ Populates the files_to_process list with TIF files from the source_path tree. """
@@ -177,3 +190,21 @@ class BNIImageProcessor(object):
         self.db_session.flush()
         self.db_session.commit()
         return new_image.uuid
+
+    def archive(self, source_filename, relative_tif_path, target_path, uuid):
+        full_target_path = target_path + '/' + str(self.next_dir) + os.path.normpath(os.path.dirname(relative_tif_path) + '/../')
+        if not os.path.exists(full_target_path):
+            os.makedirs(full_target_path)
+        new_filename = str(uuid) + '__' + os.path.basename(source_filename)
+        new_filepath = full_target_path + '/' + new_filename
+        shutil.copy2(source_filename, new_filepath)
+        self.generate_sha1(full_target_path, new_filename)
+
+    def generate_sha1(self, file_cwd, filename):
+        sha1_output_file = file_cwd + '/' + filename + '.sha1'
+        sha1sum_filep = io.open(sha1_output_file, "w")
+        sha1sum_call = [
+            '/usr/bin/sha1sum',
+            filename
+        ]
+        subprocess.call(sha1sum_call, stdout=sha1sum_filep, cwd=file_cwd)
