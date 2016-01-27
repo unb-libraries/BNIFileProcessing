@@ -3,6 +3,9 @@ Manipulates and transfers scanned newspaper images in a defined workflow.
 This suite is really only useful in our specific situation. If you are looking at
 this project from afar, you probably do not want to use it.
 """
+
+# from multiprocessing import Pool
+from multiprocessing.pool import ThreadPool as Pool
 from optparse import OptionParser
 from os import path
 from sqlalchemy import Column, Integer, String, DateTime
@@ -12,14 +15,15 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import Sequence
 from sqlalchemy.sql import exists
 from sqlalchemy import event, DDL
-import subprocess
+
 import datetime
+import io
 import fnmatch
 import os as os
-import io
-import sys
+import pyprind
 import shutil
-
+import subprocess
+import sys
 
 Base = declarative_base()
 
@@ -32,6 +36,7 @@ class BNIImage(Base):
     name = Column(String(512), nullable=False)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 event.listen(BNIImage.__table__, "after_create", DDL("INSERT INTO bni_image (uuid, name) VALUES (512082,'START')"))
+
 
 class BNIImageProcessor(object):
     def __init__(self):
@@ -150,26 +155,31 @@ class BNIImageProcessor(object):
         self.check_options()
 
     def process(self):
+        progress_bar = pyprind.ProgPercent(len(self.files_to_process))
         os.makedirs(self.options.bni_path + "/" + self.next_dir)
         os.makedirs(self.options.lib_path + "/" + self.next_dir)
+
+        pool_size = 16
+        pool = Pool(pool_size)
         for tif_filename in self.files_to_process:
-            print "Processing " + tif_filename
             relative_tif_path = tif_filename.replace(self.options.source_path, '')
             image_uuid = self.get_image_uuid(relative_tif_path)
+            pool.apply_async(self.process_worker, (tif_filename, relative_tif_path, image_uuid, progress_bar))
+        pool.close()
+        pool.join()
 
-            file_stem = os.path.basename(
-                tif_filename[0:tif_filename.rindex('.')]
-            )
-
-            jpg_filename = os.path.normpath(
-                os.path.dirname(tif_filename) + '/' +
-                '../Jpgs/' +
-                '.'.join((file_stem, 'jpg'))
-            )
-
-            self.archive(tif_filename, relative_tif_path, self.options.bni_path, image_uuid)
-            self.archive(jpg_filename, relative_tif_path, self.options.lib_path, image_uuid)
-
+    def process_worker(self, tif_filename, relative_tif_path, image_uuid, progress_bar):
+        file_stem = os.path.basename(
+            tif_filename[0:tif_filename.rindex('.')]
+        )
+        jpg_filename = os.path.normpath(
+            os.path.dirname(tif_filename) + '/' +
+            '../Jpgs/' +
+            '.'.join((file_stem, 'jpg'))
+        )
+        self.archive(tif_filename, relative_tif_path, self.options.bni_path, image_uuid)
+        self.archive(jpg_filename, relative_tif_path, self.options.lib_path, image_uuid)
+        progress_bar.update()
 
     def set_files_to_process(self):
         """ Populates the files_to_process list with TIF files from the source_path tree. """
