@@ -216,7 +216,14 @@ class BNIImageProcessor(object):
             os.makedirs(full_target_path)
         new_filename = str(uuid) + '__' + os.path.basename(source_filename)
         new_filepath = full_target_path + '/' + new_filename
-        shutil.move(source_filename, new_filepath)
+
+        move_call = [
+            '/bin/mv',
+            source_filename,
+            new_filepath
+        ]
+        subprocess.call(move_call)
+
         self.generate_sha1(full_target_path, new_filename)
 
     def generate_sha1(self, file_cwd, filename):
