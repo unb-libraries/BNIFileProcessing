@@ -150,6 +150,12 @@ class BNIImageProcessor(object):
             default='',
             help="The mounted Amazon S3FS target where the files will be stored. This is used only to determine what directory name to place files into, it is not written to.",
         )
+        self.option_parser.add_option(
+            "-n", "--next",
+            dest="next_dir",
+            default=False,
+            help="Use this option to manually override the next_dir setting with a new dirname, e.g. 00049.",
+        )
         (options, args) = self.option_parser.parse_args()
         self.options = options
         self.check_options()
@@ -189,10 +195,13 @@ class BNIImageProcessor(object):
 
     def set_next_dir(self):
         """ Examines the bni_path to determine the next path in the numerically sequenced directories. """
-        file_counter = 1
-        while path.exists(self.options.target_path + "/" + str(file_counter).zfill(6)):
-            file_counter += 1
-        self.next_dir = str(file_counter).zfill(6)
+        if self.options.next_dir is False:
+            file_counter = 1
+            while path.exists(self.options.target_path + "/" + str(file_counter).zfill(6)):
+                file_counter += 1
+            self.next_dir = str(file_counter).zfill(6)
+        else:
+            self.next_dir = self.options.next_dir
 
     def get_image_uuid(self, relative_tif_path):
         new_image = BNIImage(name=relative_tif_path)
