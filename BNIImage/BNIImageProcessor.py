@@ -17,11 +17,9 @@ from sqlalchemy.sql import exists
 from sqlalchemy import event, DDL
 
 import datetime
-import io
 import fnmatch
 import os as os
 import pyprind
-import shutil
 import subprocess
 import sys
 
