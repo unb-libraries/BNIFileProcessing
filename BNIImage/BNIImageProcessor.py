@@ -174,6 +174,9 @@ class BNIImageProcessor(object):
         pool.close()
         pool.join()
 
+        self.generate_sha1_tree(self.options.bni_path, 'tif')
+        self.generate_sha1_tree(self.options.lib_path, 'jpg')
+
     def process_worker(self, tif_filename, relative_tif_path, image_uuid, progress_bar):
         file_stem = os.path.basename(
             tif_filename[0:tif_filename.rindex('.')]
@@ -224,13 +227,10 @@ class BNIImageProcessor(object):
         ]
         subprocess.call(move_call)
 
-        self.generate_sha1(full_target_path, new_filename)
+    def generate_sha1_tree(self, path, file_type):
+        sha1sum_call = 'find . -type f -name "*.' + file_type + '" -print0 | xargs -0 sha1sum > ' + self.next_dir + '.sha1'
+        subprocess.call(sha1sum_call, cwd=path, shell=True)
 
-    def generate_sha1(self, file_cwd, filename):
-        sha1_output_file = file_cwd + '/' + filename + '.sha1'
-        sha1sum_filep = io.open(sha1_output_file, "w")
-        sha1sum_call = [
-            '/usr/bin/sha1sum',
-            filename
-        ]
-        subprocess.call(sha1sum_call, stdout=sha1sum_filep, cwd=file_cwd)
+    def copy_tree_bni(self):
+        bni_tree_copy_call = 'aws s3 sync ' + self.next_dir + ' "s3://bni-digital-archives-scans/' + self.next_dir + '"'
+        subprocess.call(bni_tree_copy_call, cwd=self.options.bni_path, shell=True)
