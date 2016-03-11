@@ -174,8 +174,9 @@ class BNIImageProcessor(object):
         pool.close()
         pool.join()
 
-        self.generate_sha1_tree(self.options.bni_path, 'tif')
-        self.generate_sha1_tree(self.options.lib_path, 'jpg')
+        self.generate_sha1_tree(self.options.bni_path + "/" + self.next_dir, 'tif')
+        self.generate_sha1_tree(self.options.lib_path + "/" + self.next_dir, 'jpg')
+        self.copy_tree_bni()
 
     def process_worker(self, tif_filename, relative_tif_path, image_uuid, progress_bar):
         file_stem = os.path.basename(
