@@ -246,6 +246,6 @@ class BNIImageProcessor(object):
 
         if not len(self.files_to_process) == len(dir_files):
             print(
-                "\nERROR: The number of generated " + extension + ' files in ' + path +
-                ' does not match the source in ' + self.options.source_path + ' !')
+                "\nERROR: The number [" + str(len(dir_files)) + '] of generated ' + extension + ' files in ' + path +
+                ' does not match the source [' + str(len(self.files_to_process)) + '] in ' + self.options.source_path + ' !')
             sys.exit(2)
