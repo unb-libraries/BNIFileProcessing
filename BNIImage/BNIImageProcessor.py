@@ -172,8 +172,8 @@ class BNIImageProcessor(object):
         pool.close()
         pool.join()
 
-        self.check_file_count(self.options.bni_path, 'tif')
-        self.check_file_count(self.options.lib_path, 'jpg')
+        self.check_file_count(self.options.bni_path + "/" + self.next_dir, 'tif')
+        self.check_file_count(self.options.lib_path + "/" + self.next_dir, 'jpg')
 
         self.generate_sha1_tree(self.options.bni_path + "/" + self.next_dir, 'tif')
         self.generate_sha1_tree(self.options.lib_path + "/" + self.next_dir, 'jpg')
