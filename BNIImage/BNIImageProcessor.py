@@ -172,8 +172,12 @@ class BNIImageProcessor(object):
         pool.close()
         pool.join()
 
+        self.check_file_count(self.options.bni_path, 'tif')
+        self.check_file_count(self.options.lib_path, 'jpg')
+
         self.generate_sha1_tree(self.options.bni_path + "/" + self.next_dir, 'tif')
         self.generate_sha1_tree(self.options.lib_path + "/" + self.next_dir, 'jpg')
+
         self.copy_tree_bni()
 
     def process_worker(self, tif_filename, relative_tif_path, image_uuid, progress_bar):
@@ -233,3 +237,15 @@ class BNIImageProcessor(object):
     def copy_tree_bni(self):
         bni_tree_copy_call = 'aws s3 sync ' + self.next_dir + ' "s3://bni-digital-archives-scans/' + self.next_dir + '"'
         subprocess.call(bni_tree_copy_call, cwd=self.options.bni_path, shell=True)
+
+    def check_file_count(self, path, extension):
+        dir_files = []
+        for root, dirnames, filenames in os.walk(path):
+            for filename in fnmatch.filter(filenames, '*.' + extension):
+                dir_files.append(root + '/' + filename)
+
+        if not len(self.files_to_process) == len(dir_files):
+            print(
+                "\nERROR: The number of generated " + extension + ' files in ' + path +
+                ' does not match the source in ' + self.options.source_path + ' !')
+            sys.exit(2)
