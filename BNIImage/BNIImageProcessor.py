@@ -4,8 +4,6 @@ This suite is really only useful in our specific situation. If you are looking a
 this project from afar, you probably do not want to use it.
 """
 
-# from multiprocessing import Pool
-from multiprocessing.pool import ThreadPool as Pool
 from optparse import OptionParser
 from os import path
 from sqlalchemy import Column, Integer, String, DateTime
@@ -163,14 +161,10 @@ class BNIImageProcessor(object):
         os.makedirs(self.options.bni_path + "/" + self.next_dir)
         os.makedirs(self.options.lib_path + "/" + self.next_dir)
 
-        pool_size = 16
-        pool = Pool(pool_size)
         for tif_filename in self.files_to_process:
             relative_tif_path = tif_filename.replace(self.options.source_path, '')
             image_uuid = self.get_image_uuid(relative_tif_path)
-            pool.apply_async(self.process_worker, (tif_filename, relative_tif_path, image_uuid, progress_bar))
-        pool.close()
-        pool.join()
+            self.process_worker(tif_filename, relative_tif_path, image_uuid, progress_bar)
 
         self.check_file_count(self.options.bni_path + "/" + self.next_dir, 'tif')
         self.check_file_count(self.options.lib_path + "/" + self.next_dir, 'jpg')
@@ -228,7 +222,7 @@ class BNIImageProcessor(object):
             source_filename,
             new_filepath
         ]
-        subprocess.call(move_call)
+        subprocess.call(move_call, shell=True)
 
     def generate_sha1_tree(self, path, file_type):
         sha1sum_call = 'find . -type f -name "*.' + file_type + '" -print0 | xargs -0 sha1sum > ' + self.next_dir + '.sha1'
