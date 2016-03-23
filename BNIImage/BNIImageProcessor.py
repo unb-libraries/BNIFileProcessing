@@ -222,7 +222,7 @@ class BNIImageProcessor(object):
             source_filename,
             new_filepath
         ]
-        subprocess.call(move_call, shell=True)
+        subprocess.call(move_call)
 
     def generate_sha1_tree(self, path, file_type):
         sha1sum_call = 'find . -type f -name "*.' + file_type + '" -print0 | xargs -0 sha1sum > ' + self.next_dir + '.sha1'
