@@ -19,6 +19,7 @@ import fnmatch
 import os as os
 import pyprind
 import subprocess
+import shutil
 import sys
 
 Base = declarative_base()
@@ -250,3 +251,10 @@ class BNIImageProcessor(object):
                 dir_files.append(root + '/' + filename)
         return len(dir_files)
 
+    def delete_source_dir(self):
+        if self.get_num_files_in_tree(self.options.source_path, 'tif') == 0:
+            print "Removing source dir: " + self.options.source_path
+            if not self.options.source_path == '/' and not self.options.source_path == '':
+                shutil.rmtree(self.options.source_path)
+        else:
+            print "Cowardly refusing to remove non-empty source dir: " + self.options.source_path
