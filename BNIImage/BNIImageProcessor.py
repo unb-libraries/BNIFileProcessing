@@ -239,17 +239,18 @@ class BNIImageProcessor(object):
 
     def check_file_count(self, path, extension):
         dir_files = self.get_num_files_in_tree(path, extension)
-        if not len(self.files_to_process) == self.get_num_files_in_tree(path, extension):
+        if not len(self.files_to_process) == dir_files:
             print(
-                "\nERROR: The number [" + str(len(dir_files)) + '] of generated ' + extension + ' files in ' + path +
-                ' does not match the source [' + str(len(self.files_to_process)) + '] in ' + self.options.source_path + ' !')
+                "\nERROR: The number [" + str(dir_files) + '] of generated ' + extension + ' files in ' + path +
+                ' does not match the source [' + str(len(self.files_to_process)) + '] in ' + self.options.source_path +
+                ' !')
             sys.exit(2)
 
     def get_num_files_in_tree(self, path, extension):
         dir_files = []
         for root, dirnames, filenames in os.walk(path):
             for filename in fnmatch.filter(filenames, '*.' + extension):
-                dir_files.append(root + '/' + filename)
+                dir_files.append(filename)
         return len(dir_files)
 
     def delete_source_dir(self):
