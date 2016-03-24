@@ -236,13 +236,17 @@ class BNIImageProcessor(object):
         subprocess.call(bni_tree_copy_call, cwd=self.options.bni_path, shell=True)
 
     def check_file_count(self, path, extension):
-        dir_files = []
-        for root, dirnames, filenames in os.walk(path):
-            for filename in fnmatch.filter(filenames, '*.' + extension):
-                dir_files.append(root + '/' + filename)
-
-        if not len(self.files_to_process) == len(dir_files):
+        dir_files = self.get_num_files_in_tree(path, extension)
+        if not len(self.files_to_process) == self.get_num_files_in_tree(path, extension):
             print(
                 "\nERROR: The number [" + str(len(dir_files)) + '] of generated ' + extension + ' files in ' + path +
                 ' does not match the source [' + str(len(self.files_to_process)) + '] in ' + self.options.source_path + ' !')
             sys.exit(2)
+
+    def get_num_files_in_tree(self, path, extension):
+        dir_files = []
+        for root, dirnames, filenames in os.walk(path):
+            for filename in fnmatch.filter(filenames, '*.' + extension):
+                dir_files.append(root + '/' + filename)
+        return len(dir_files)
+
