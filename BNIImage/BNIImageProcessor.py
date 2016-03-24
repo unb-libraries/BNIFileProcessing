@@ -82,6 +82,9 @@ class BNIImageProcessor(object):
         if len(self.files_to_process) < 400:
             print("\nERROR: Number of TIF files in source tree is suspiciously low. (--source)")
             sys.exit(2)
+        if len(self.files_to_process) > 2000:
+            print("\nERROR: Number of TIF files in source tree is suspiciously high. (--source)")
+            sys.exit(2)
         if len(self.get_unmatched_tifs()) > 0:
             print("\nERROR: Some TIF files appear to not have corresponding JPG files. (--source)")
             print self.get_unmatched_tifs()
