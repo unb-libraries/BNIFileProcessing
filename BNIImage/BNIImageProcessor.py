@@ -44,7 +44,8 @@ class BNIImageProcessor(object):
         self.files_to_process = []
 
         self.init_options()
-        self.check_target()
+        if self.options.next_dir is False:
+            self.check_target()
         self.set_next_dir()
         self.set_files_to_process()
         self.check_source_files()
