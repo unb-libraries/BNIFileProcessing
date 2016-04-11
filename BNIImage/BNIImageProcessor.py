@@ -81,7 +81,7 @@ class BNIImageProcessor(object):
 
     def check_source_files(self):
         """ Checks the source files for simple problems. """
-        if len(self.files_to_process) < 400:
+        if len(self.files_to_process) < 300:
             print("\nERROR: Number of TIF files in source tree is suspiciously low. (--source)")
             sys.exit(2)
         if len(self.files_to_process) > 2000:
