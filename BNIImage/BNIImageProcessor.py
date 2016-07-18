@@ -220,7 +220,7 @@ class BNIImageProcessor(object):
         full_target_path = target_path + '/' + str(self.next_dir) + os.path.normpath(os.path.dirname(relative_tif_path) + '/../')
         if not os.path.exists(full_target_path):
             os.makedirs(full_target_path)
-        new_filename = str(uuid) + '__' + os.path.basename(source_filename)
+        new_filename = os.path.basename(source_filename)
         new_filepath = full_target_path + '/' + new_filename
 
         move_call = [
