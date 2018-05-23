@@ -1,5 +1,5 @@
-#BNIFileProcessing
-###General Info
+# BNIFileProcessing
+### General Info
 Serves as the core tool for processing newspaper images scanned in our large digitization project. Most likely not useful for you.
 
 ##License
